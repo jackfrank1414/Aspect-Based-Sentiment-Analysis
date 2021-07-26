@@ -1,0 +1,155 @@
+#!/usr/bin/env python
+# _*_ coding: utf-8 _*_
+# @Time : 2021/4/10 20:21
+# @Author : jackfrank
+# @Version：V 0.1
+# @File : Tokenize.py
+# @desc :
+"""
+    对文本进行预处理、词频统计等，并生成词云图
+"""
+
+import jieba
+import jieba.analyse
+import pandas as pd
+import re
+
+
+def read_data(path):
+    """
+    读取excel文件，
+    函数输入为文件所在的路径，并将文件转化成字典的形式输出
+    :param path:    path为文件所在的路径
+    :return dict_data0:    dict_data0是保存了excel所有信息的字典，key为excel表中的不同列名，value为对应列下的所有信息
+    """
+    origin_data = pd.read_excel(path)
+    dict_data0 = origin_data.to_dict()
+    return dict_data0
+
+
+def merge_data(dic_data):
+    """
+    提取字典中存储的指定comment信息，
+    函数输入为字典形式的所有文档信息，key为excel表中的不同列名，value为对应列下的所有信息，
+    函数将comment信息从输入的字典中提取出来，并返回以字典形式保存的comment信息
+    :param dic_data:    保存着excel所有信息的字典
+    :return merged_data0：   提取出来的comment信息，key为不同的景区名称，value为对应的多条评论，评论以列表的形式保存
+    """
+    comment1 = []
+    comment2 = []
+    comment3 = []
+    comment4 = []
+    comment5 = []
+    comments = dic_data['评论详情']
+    for key in dic_data['景区名称']:
+        if dic_data['景区名称'][key] == 'A01':
+            comment1.append(str(comments[key]))
+        elif dic_data['景区名称'][key] == 'A02':
+            comment2.append(str(comments[key]))
+        elif dic_data['景区名称'][key] == 'A03':
+            comment3.append(str(comments[key]))
+        elif dic_data['景区名称'][key] == 'A04':
+            comment4.append(str(comments[key]))
+        elif dic_data['景区名称'][key] == 'A05':
+            comment5.append(str(comments[key]))
+    merged_data0 = {'A01': comment1, 'A02': comment2, 'A03': comment3, 'A04': comment4, 'A05': comment5}
+    return merged_data0
+
+
+def prep_data(merged_data1):
+    """
+    将comment信息进行预处理，并合并每个景区的所有评论，去除停用词，
+    函数输入为存储着comment信息的字典，
+    去除comment中的所有非中文字符以及停用词，
+    输出为存储着经处理后的comment字典，key为景区名称，value为该景区的所有评论，value属于string类型
+    :param merged_data1:    保存着comment的字典
+    :return useful_data0:   预处理后的comment信息,还是以字典的形式输出
+    """
+    useful_data0 = {}
+    for key in merged_data1:
+        if key == 'A01':
+            string0 = ""
+            length = len(merged_data1[key])
+            for i in range(0, length):
+                string0 = string0 + re.sub('[^\u4e00-\u9fa5]+', '', merged_data1[key][i])
+            useful_data0['A01'] = string0
+        elif key == 'A02':
+            string0 = ""
+            length = len(merged_data1[key])
+            for i in range(0, length):
+                string0 = string0 + re.sub('[^\u4e00-\u9fa5]+', '', merged_data1[key][i])
+            useful_data0['A02'] = string0
+        elif key == 'A03':
+            string0 = ""
+            length = len(merged_data1[key])
+            for i in range(0, length):
+                string0 = string0 + re.sub('[^\u4e00-\u9fa5]+', '', merged_data1[key][i])
+            useful_data0['A03'] = string0
+        elif key == 'A04':
+            string0 = ""
+            length = len(merged_data1[key])
+            for i in range(0, length):
+                string0 = string0 + re.sub('[^\u4e00-\u9fa5]+', '', merged_data1[key][i])
+            useful_data0['A04'] = string0
+        elif key == 'A05':
+            string0 = ""
+            length = len(merged_data1[key])
+            for i in range(0, length):
+                string0 = string0 + re.sub('[^\u4e00-\u9fa5]+', '', merged_data1[key][i])
+            useful_data0['A05'] = string0
+    return useful_data0
+
+
+def stopwordslist(filepath):
+    """
+    加载停用词表，并生成停用词列表
+    :param filepath:    停用词表的路径
+    :return stopwords:  停用词列表
+    """
+    stopwords = [line.strip() for line in open(filepath, 'r', encoding='gbk').readlines()]
+    return stopwords
+
+
+def seg_sentence(sentence):
+    """
+    分词，并去除句子中的中文停用词
+    :param sentence:    需处理的字符串
+    :return outstr:     处理后的字符串
+    """
+    sentence_seged = jieba.cut(sentence.strip())
+    stopwords = stopwordslist(r'D:\work\泰迪杯竞赛\C题\chinese_stop.txt')  # 这里加载停用词的路径
+    outstr = ''
+    for word in sentence_seged:
+        if word not in stopwords:
+            if word != '\t':
+                outstr += word
+                outstr += " "
+    return outstr
+
+
+def cutting_data(useful_data0):
+    """
+    对数据进行分词、去停用词处理，将结果保存至result.txt文件当中，并在控制台打印,使用jieba库自带的分析函数找出文本前20热度的词
+    :param useful_data0: 保存着不同景区comment的字典
+    :return:
+    """
+    for key in useful_data0:
+        line_seg = seg_sentence(useful_data0[key])
+        print(line_seg)
+        outputs = open(r'.\result.txt', 'a', encoding='utf-8')
+        outputs.write(line_seg + '\n')
+
+        i = 1
+        for x, w in jieba.analyse.extract_tags(line_seg, topK=20, withWeight=True):
+            print('%s %s' % (x, w))
+            outputs.write('%s %s' % (x, w) + '\n')
+            i = i + 1
+        outputs.write('\n')
+
+
+if __name__ == '__main__':
+    path1 = r"D:\work\泰迪杯竞赛\C题\comment\景区评论（样例数据）.xlsx"
+    dict_data = read_data(path1)
+    merged_data = merge_data(dict_data)
+    useful_data = prep_data(merged_data)
+    cutting_data(useful_data)
